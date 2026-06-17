@@ -1,0 +1,70 @@
+services:
+  # ============================================================
+  # Laravel App — PHP-FPM + Nginx + Queue + Scheduler
+  # ============================================================
+  app:
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    container_name: beasiswa-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - ./app:/var/www/html/app:delegated
+      - ./routes:/var/www/html/routes:delegated
+      - ./resources:/var/www/html/resources:delegated
+      - ./config:/var/www/html/config:delegated
+      - ./database:/var/www/html/database:delegated
+      - ./public:/var/www/html/public:delegated
+      - ./tests:/var/www/html/tests:delegated
+      - ./composer.json:/var/www/html/composer.json:ro
+      - ./composer.lock:/var/www/html/composer.lock:ro
+      - ./package.json:/var/www/html/package.json:ro
+      - ./vite.config.js:/var/www/html/vite.config.js:ro
+      - ./docker/nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./docker/supervisor/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf:ro
+    environment:
+      APP_NAME: ${APP_NAME:-Platform Beasiswa}
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:${APP_PORT:-8080}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-mono_scholarship}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: noreply@beasiswa.test
+      MAIL_FROM_NAME: "${APP_NAME:-Platform Beasiswa}"
+      FILESYSTEM_DISK: minio
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-scholarship-documents}
+      MINIO_USE_PATH_STYLE: "true"
+      AWS_DEFAULT_REGION: us-east-1
+      FONNTE_TOKEN: ${FONNTE_TOKEN:-}
+      SESSION_LIFETIME: 30
+      COMPOSER_MEMORY_LIMIT: -1
+      COMPOSER_PROCESS_TIMEOUT: 600
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - beasiswa-network
+
+networks:
+  beasiswa-network:
+    driver: bridge

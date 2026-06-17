@@ -1,0 +1,299 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
+@import "tailwindcss";
+@source "../views";
+
+/* Alpine.js — prevent flash of unstyled content during DOM morphing */
+[x-cloak] { display: none !important; }
+
+/* --- Dark mode class strategy --- */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* --- Design Tokens --- */
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+    /* Base Unit & Spacing (4px scale) */
+    /* Removed to prevent breaking standard Tailwind max-w-* and spacing utilities */
+
+    /* Border Radius Scale */
+    --radius-none: 0px;
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-pill-sm: 64px;
+    --radius-pill: 100px;
+    --radius-full: 9999px;
+
+    /* Shadows / Elevation */
+    --shadow-none: none;
+    --shadow-level-1: inset 0 0 0 1px #00000014;
+    --shadow-level-2: 0px 1px 1px #00000005, 0px 2px 2px #0000000a, inset 0 0 0 1px #00000014;
+    --shadow-level-3: 0px 2px 2px #0000000a, 0px 8px 8px -8px #0000000a, inset 0 0 0 1px #00000014;
+    --shadow-level-4: 0px 2px 2px #0000000a, 0px 8px 16px -4px #0000000a, inset 0 0 0 1px #00000014;
+    --shadow-level-5: 0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a, 0px 24px 32px -8px #0000000f, inset 0 0 0 1px #00000014;
+
+    /* Semantic Shadows for Dark Mode */
+    --shadow-dark-level-1: inset 0 0 0 1px #ffffff14;
+    --shadow-dark-level-2: 0px 1px 1px #00000050, 0px 2px 2px #00000050, inset 0 0 0 1px #ffffff14;
+    --shadow-dark-level-3: 0px 2px 2px #00000050, 0px 8px 8px -8px #00000050, inset 0 0 0 1px #ffffff14;
+    --shadow-dark-level-4: 0px 2px 2px #00000050, 0px 8px 16px -4px #00000050, inset 0 0 0 1px #ffffff14;
+    --shadow-dark-level-5: 0px 1px 1px #00000050, 0px 8px 16px -4px #00000050, 0px 24px 32px -8px #00000050, inset 0 0 0 1px #ffffff14;
+
+    /* Animations */
+    --animate-fade-in: fade-in 0.15s ease-out;
+    --animate-fade-out: fade-out 0.15s ease-in;
+    --animate-slide-in-from-left: slide-in-from-left 0.3s ease-out;
+    --animate-slide-out-to-left: slide-out-to-left 0.3s ease-in;
+    --animate-slide-in-from-top: slide-in-from-top 0.3s ease-out;
+    --animate-zoom-in: zoom-in 0.15s ease-out;
+    --animate-scale-in: scale-in 0.15s ease-out;
+}
+
+/* --- Colors (Light Mode) --- */
+:root {
+    --primary: #171717;
+    --on-primary: #ffffff;
+    
+    --canvas: #ffffff;
+    --canvas-soft: #fafafa;
+    --canvas-soft-2: #f5f5f5;
+    
+    --hairline: #ebebeb;
+    --hairline-strong: #a1a1a1;
+    
+    --ink: #171717;
+    --body: #4d4d4d;
+    --mute: #888888;
+    
+    --link: #0070f3;
+    --link-deep: #0761d1;
+    --link-bg-soft: #d3e5ff;
+    
+    --success: #0070f3; /* Using link color for success per brand */
+    --error: #ee0000;
+    --error-soft: #f7d4d6;
+    --error-deep: #c50000;
+    
+    --warning: #f5a623;
+    --warning-soft: #ffefcf;
+    --warning-deep: #ab570a;
+
+    --gradient-develop-start: #007cf0;
+    --gradient-develop-end: #00dfd8;
+    --gradient-preview-start: #7928ca;
+    --gradient-preview-end: #ff0080;
+    --gradient-ship-start: #ff4d4d;
+    --gradient-ship-end: #f9cb28;
+
+    /* Aliases for general UI utilities to keep some backwards compatibility with shadcn but using Vercel values */
+    --background: var(--canvas-soft);
+    --foreground: var(--ink);
+    --card: var(--canvas);
+    --card-foreground: var(--ink);
+    --primary-foreground: var(--on-primary);
+    --secondary: var(--canvas);
+    --secondary-foreground: var(--ink);
+    --muted: var(--canvas-soft-2);
+    --muted-foreground: var(--mute);
+    --accent: var(--canvas-soft-2);
+    --accent-foreground: var(--ink);
+    --destructive: var(--error);
+    --destructive-foreground: #ffffff;
+    --border: var(--hairline);
+    --input: var(--hairline);
+    --ring: var(--primary);
+    --success-foreground: #ffffff;
+    --warning-foreground: #ffffff;
+}
+
+/* --- Colors (Dark Mode) --- */
+.dark {
+    --primary: #ffffff;
+    --on-primary: #000000;
+    
+    --canvas: #000000;
+    --canvas-soft: #111111;
+    --canvas-soft-2: #222222;
+    
+    --hairline: #333333;
+    --hairline-strong: #666666;
+    
+    --ink: #ffffff;
+    --body: #a1a1a1;
+    --mute: #888888;
+    
+    --link: #3291ff;
+    --link-deep: #0070f3;
+    --link-bg-soft: #00254d;
+    
+    --error: #f33;
+    --error-soft: #3e1215;
+    --error-deep: #ff1a1a;
+    
+    --warning: #f5a623;
+    --warning-soft: #4d3300;
+    --warning-deep: #f7b955;
+    
+    --destructive-foreground: #000000;
+}
+
+@theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-on-primary: var(--on-primary);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    
+    --color-canvas: var(--canvas);
+    --color-canvas-soft: var(--canvas-soft);
+    --color-canvas-soft-2: var(--canvas-soft-2);
+    --color-hairline: var(--hairline);
+    --color-hairline-strong: var(--hairline-strong);
+    --color-ink: var(--ink);
+    --color-body: var(--body);
+    --color-mute: var(--mute);
+    --color-link: var(--link);
+    --color-link-deep: var(--link-deep);
+    --color-link-bg-soft: var(--link-bg-soft);
+    --color-success: var(--success);
+    --color-error: var(--error);
+    --color-error-soft: var(--error-soft);
+    --color-error-deep: var(--error-deep);
+    --color-warning: var(--warning);
+    --color-warning-soft: var(--warning-soft);
+    --color-warning-deep: var(--warning-deep);
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-canvas-soft text-ink antialiased;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-semibold;
+    }
+}
+
+/* --- Typography Utilities (Vercel-inspired) --- */
+@layer utilities {
+    .text-display-xl {
+        @apply text-5xl font-semibold tracking-tight;
+    }
+    .text-display-lg {
+        @apply text-4xl font-semibold tracking-tight;
+    }
+    .text-display-md {
+        @apply text-3xl font-semibold tracking-tight;
+    }
+    .text-display-sm {
+        @apply text-2xl font-semibold tracking-tight;
+    }
+    .text-display-xs {
+        @apply text-xl font-semibold tracking-tight;
+    }
+    .text-body-lg {
+        @apply text-lg font-normal tracking-normal text-body;
+    }
+    .text-body-md {
+        @apply text-base font-normal tracking-normal text-body;
+    }
+    .text-body-md-strong {
+        @apply text-base font-medium tracking-normal text-ink;
+    }
+    .text-body-sm {
+        @apply text-sm font-normal text-body;
+    }
+    .text-body-sm-strong {
+        @apply text-sm font-medium text-ink;
+    }
+    .text-caption {
+        @apply text-xs font-normal tracking-normal text-mute;
+    }
+    .text-caption-mono {
+        @apply text-xs font-normal tracking-normal font-mono text-body;
+    }
+    .text-code {
+        @apply text-sm font-normal tracking-normal font-mono;
+    }
+    .text-button-md {
+        @apply text-sm font-medium tracking-normal;
+    }
+    .text-button-lg {
+        @apply text-base font-medium tracking-normal;
+    }
+
+    /* Shadow Utilities */
+    .shadow-level-1 { box-shadow: var(--shadow-level-1); }
+    .shadow-level-2 { box-shadow: var(--shadow-level-2); }
+    .shadow-level-3 { box-shadow: var(--shadow-level-3); }
+    .shadow-level-4 { box-shadow: var(--shadow-level-4); }
+    .shadow-level-5 { box-shadow: var(--shadow-level-5); }
+
+    .dark .shadow-level-1 { box-shadow: var(--shadow-dark-level-1); }
+    .dark .shadow-level-2 { box-shadow: var(--shadow-dark-level-2); }
+    .dark .shadow-level-3 { box-shadow: var(--shadow-dark-level-3); }
+    .dark .shadow-level-4 { box-shadow: var(--shadow-dark-level-4); }
+    .dark .shadow-level-5 { box-shadow: var(--shadow-dark-level-5); }
+    
+    /* Gradients */
+    .bg-gradient-develop {
+        background-image: linear-gradient(to right, var(--gradient-develop-start), var(--gradient-develop-end));
+    }
+    .bg-gradient-preview {
+        background-image: linear-gradient(to right, var(--gradient-preview-start), var(--gradient-preview-end));
+    }
+    .bg-gradient-ship {
+        background-image: linear-gradient(to right, var(--gradient-ship-start), var(--gradient-ship-end));
+    }
+}
+
+/* Animation keyframes */
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+@keyframes slide-in-from-left {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+@keyframes slide-out-to-left {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
+}
+@keyframes zoom-in {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+@keyframes slide-in-from-top {
+    from { transform: translateY(-0.5rem); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+@keyframes scale-in {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}

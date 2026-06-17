@@ -1,0 +1,99 @@
+# ============================================================
+# Platform Beasiswa — Docker Compose (Supporting Services)
+# ============================================================
+# Services: Redis 7  ·  MinIO (S3)  ·  Mailpit (SMTP)
+#
+# Usage:
+#   docker compose up -d          # Start all
+#   docker compose down           # Stop all
+#   docker compose down -v        # Stop + destroy volumes
+# ============================================================
+
+services:
+  # ============================================================
+  # Redis 7 — Cache / Queue / Session
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: beasiswa-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy noeviction
+      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================
+  # MinIO — S3-compatible Object Storage
+  # ============================================================
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: beasiswa-minio
+    restart: unless-stopped
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================
+  # MinIO Init — auto-create bucket on first run
+  # ============================================================
+  minio-init:
+    image: quay.io/minio/mc:latest
+    container_name: beasiswa-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin} 2>/dev/null; do
+        echo 'Waiting for MinIO...';
+        sleep 3;
+      done;
+      mc mb --ignore-existing local/${MINIO_BUCKET:-scholarship-documents};
+      mc anonymous set private local/${MINIO_BUCKET:-scholarship-documents};
+      echo 'MinIO bucket ready';
+      exit 0;
+      "
+
+  # ============================================================
+  # Mailpit — Email Testing (SMTP + Web UI)
+  # ============================================================
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: beasiswa-mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+    environment:
+      MP_UI_BIND_ADDR: 0.0.0.0:8025
+      MP_SMTP_BIND_ADDR: 0.0.0.0:1025
+      MP_MAX_MESSAGES: 5000
+
+# ============================================================
+# Volumes
+# ============================================================
+volumes:
+  redis_data:
+  minio_data:
