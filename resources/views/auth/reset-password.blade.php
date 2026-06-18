@@ -7,10 +7,19 @@
                     <h1 class="mt-4 text-display-xs text-ink">Reset Password</h1>
                     <p class="mt-1 text-body-sm text-mute">Masukkan password baru Anda</p>
                 </div>
+                @if($errors->any())
+                    <div class="mb-4">
+                        <x-ui.alert variant="destructive">
+                            @foreach($errors->all() as $error)
+                                <p>{{ $error }}</p>
+                            @endforeach
+                        </x-ui.alert>
+                    </div>
+                @endif
                 <form method="POST" action="{{ url('/reset-password') }}" class="space-y-4">
                     @csrf
                     <input type="hidden" name="token" value="{{ $request->route('token') }}">
-                    <x-ui.input label="Email" type="email" name="email" value="{{ old('email', $request->email) }}" readonly disabled />
+                    <x-ui.input label="Email" type="email" name="email" value="{{ old('email', $request->email) }}" readonly />
                     <x-ui.input label="Password Baru" type="password" name="password" required />
                     <x-ui.input label="Konfirmasi Password" type="password" name="password_confirmation" required />
                     <x-ui.button variant="primary" class="w-full" type="submit">Reset Password</x-ui.button>
