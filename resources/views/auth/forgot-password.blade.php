@@ -7,9 +7,25 @@
                     <h1 class="mt-4 text-display-xs text-ink">Lupa Password</h1>
                     <p class="mt-1 text-body-sm text-mute">Masukkan email untuk menerima link reset</p>
                 </div>
+                @if($errors->any())
+                    <div class="mb-4">
+                        <x-ui.alert variant="destructive">
+                            @foreach($errors->all() as $error)
+                                <p>{{ $error }}</p>
+                            @endforeach
+                        </x-ui.alert>
+                    </div>
+                @endif
+                @if(session('status'))
+                    <div class="mb-4">
+                        <x-ui.alert variant="success">
+                            <p>{{ session('status') }}</p>
+                        </x-ui.alert>
+                    </div>
+                @endif
                 <form method="POST" action="{{ url('/forgot-password') }}" class="space-y-4">
                     @csrf
-                    <x-ui.input label="Email" type="email" name="email" required />
+                    <x-ui.input label="Email" type="email" name="email" value="{{ old('email') }}" required />
                     <x-ui.button variant="primary" class="w-full" type="submit">Kirim Link Reset</x-ui.button>
                 </form>
                 <p class="mt-6 text-center text-body-sm text-mute">

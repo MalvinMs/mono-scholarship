@@ -41,4 +41,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ScholarshipVerifier::class);
     }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
 }

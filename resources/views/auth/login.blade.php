@@ -46,6 +46,9 @@
                             </button>
                         </div>
                     </div>
+                    <div class="text-right">
+                        <a href="{{ url('/forgot-password') }}" class="text-body-sm text-link hover:underline">Lupa Password?</a>
+                    </div>
                     <x-ui.button variant="primary" class="w-full" type="submit">Login</x-ui.button>
                 </form>
 
