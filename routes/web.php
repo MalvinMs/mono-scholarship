@@ -23,6 +23,9 @@ Route::middleware('auth')->group(function () {
 // All authenticated routes
 Route::middleware(['auth', 'verified'])->group(function () {
 
+    // Profile
+    Route::view('/profil', 'profile.edit')->name('profile.edit');
+
     // Applicant routes
     Route::middleware('role:applicant')->group(function () {
         Route::view('/dashboard', 'applicant.dashboard')->name('applicant.dashboard');

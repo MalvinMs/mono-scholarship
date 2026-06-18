@@ -65,8 +65,8 @@ $isActive = fn (string $pattern) => request()->is($pattern);
     </div>
 
     {{-- Footer --}}
-    <div class="mt-auto border-t border-hairline p-3" data-sidebar="footer">
-        <div class="flex items-center gap-3 rounded-sm px-2 py-1.5">
+    <div class="mt-auto border-t border-hairline" data-sidebar="footer">
+        <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-canvas-soft">
             <div class="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary text-on-primary text-xs font-semibold">
                 {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
             </div>
@@ -74,9 +74,11 @@ $isActive = fn (string $pattern) => request()->is($pattern);
                 <p class="truncate text-body-sm-strong text-ink">{{ auth()->user()->name }}</p>
                 <p class="truncate text-caption text-mute">{{ auth()->user()->email }}</p>
             </div>
-            <form method="POST" action="{{ url('/logout') }}" class="shrink-0">
+        </a>
+        <div class="flex justify-end px-5 pb-3">
+            <form method="POST" action="{{ url('/logout') }}">
                 @csrf
-                <button type="submit" title="Logout" class="flex size-7 items-center justify-center rounded-sm text-mute transition-colors hover:bg-canvas-soft hover:text-ink focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/50">
+                <button type="submit" title="Logout" class="flex size-7 items-center justify-center rounded-sm text-mute transition-colors hover:bg-canvas-soft hover:text-ink">
                     <x-lucide-log-out class="size-3.5" />
                 </button>
             </form>
