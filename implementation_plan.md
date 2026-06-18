@@ -1,7 +1,7 @@
 # Implementation Plan — Platform Beasiswa Multi-Program
 
-**Versi:** 1.8
-**Tanggal:** 17 Juni 2026 (Fase 4 complete + bug fixes + file upload enhancement)
+**Versi:** 1.9
+**Tanggal:** 18 Juni 2026 (Fase 4 complete + bug fixes + OTP registration redirect fix)
 **Referensi:** `prd.md` v2.1  
 **Tech Stack:** Laravel 13 · Livewire v4 · Custom UI (shadcn-inspired) · PostgreSQL 16 · Redis · MinIO
 
@@ -150,7 +150,7 @@
 |----|------|--------|----------|-------|
 | 1.3.1 | Install Laravel Fortify — `composer require laravel/fortify` | [x] | | `php artisan fortify:install` |
 | 1.3.2 | Install Spatie Permission v7 — `composer require spatie/laravel-permission` | [x] | | `php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"` |
-| 1.3.3 | Setup `FortifyServiceProvider::boot()` | [x] | | Bind actions (`CreateNewUser`, `ResetUserPassword`, etc.), register views (`auth.login`, `auth.register`) |
+| 1.3.3 | Setup `FortifyServiceProvider::boot()` | [x] | | Bind actions (`CreateNewUser`, `ResetUserPassword`, etc.), register views (`auth.login`, `auth.register`), singleton `LoginResponse` + `RegisterResponse` |
 | 1.3.4 | Config `config/fortify.php`: `views => true`, guard `web`, session auth | [x] | | Non-SPA mode karena Blade |
 | 1.3.5 | Implement `CreateNewUser` Fortify Action — mapping NIK, phone, role assignment ke `applicant` | [x] | | NIK+phone validation, role assignment 'applicant' on register |
 | 1.3.6 | Seed roles: `super-admin`, `admin`, `verifier`, `approver`, `treasurer`, `applicant` | [x] | | `php artisan db:seed --class=RoleSeeder` |
@@ -452,7 +452,8 @@
 
 | # | Issue | File | Fix |
 |---|-------|------|-----|
-| 1 | 403 saat login superadmin | `app/Http/Responses/LoginResponse.php` | Override Fortify LoginResponse — redirect based on role |
+| 1 | 403 saat login superadmin | `app/Http/Responses/LoginResponse.php` | Override Fortify LoginResponse — redirect based on role + cek `email_verified_at` → redirect ke OTP verification jika null |
+| 10 | Registrasi redirect langsung ke dashboard, halaman OTP tidak muncul | `app/Http/Responses/RegisterResponse.php`, `app/Providers/FortifyServiceProvider.php`, `app/Http/Responses/LoginResponse.php` | Override Fortify RegisterResponse → redirect ke `verification.notice` setelah registrasi; LoginResponse cek `email_verified_at === null` → redirect ke OTP page |
 | 2 | 403 di halaman `/` — header Dashboard link hardcoded | `components/layouts/public.blade.php` | Role-based URL via `hasAnyRole()` |
 | 3 | Draft save duplicate key error | `app/Actions/Application/SubmitApplication.php` | Delete old answers on every save (not just submit) |
 | 4 | Multi-choice checkboxes semua tercentang | `app/Livewire/Applicant/ApplicationForm.php` | Init `answers[id] = []` for multi_choice fields |
@@ -941,13 +942,13 @@ php artisan make:export ApplicantsExport --model=Application
 
 **Progress Keseluruhan:** Fase 0 ✅ · Fase 1 ✅ · Fase 2 ✅ · Fase 3 ✅ · Fase 4 ✅ (MVP Complete)  
 **Fase Selanjutnya:** Fase 5 — Integrasi & Skalabilitas (Opsional / Post-MVP: PDDikti, DTKS, multi-tenancy)  
-**Terakhir Update:** 17 Juni 2026 (File upload enhancement + bug fixes complete)  
+**Terakhir Update:** 18 Juni 2026 (OTP registration redirect fix: Custom RegisterResponse + LoginResponse email_verified_at check)  
 **Refactor UI:** Flowbite dihapus · 28 custom shadcn-inspired components (termasuk `<x-ui.chart>` + `<x-ui.document-uploader>`) · CSS 57KB · JS 188KB (Chart.js tree-shaken)  
 **Fase 2:** OTP · DynamicFormRenderer · ApplicationForm multi-step · File Upload 2MB MinIO (+ draft file persistence + `wire:loading` uploader + preview + step review document list) · SubmitApplication Action (+ metadata capture before store) · ApplicationStatus tracker · DocumentRevision · BBK Madiun Seeder  
 **Fase 3:** VerificationQueue + ApplicationDetail · Verify Actions (Approve/Reject/Correct/Finalize) · Blacklist System · ProcessBatchScoring Job (+ progress tracking Redis Cache) · ApplyTieBreaker · BatchSelectionRunner (+ wire:poll progress bar) · SelectionResult (+ detail breakdown & tiebreaker_log expandable) · RecipientApproval (+ dispatch notifikasi) · All 14 BV implemented  
 **Fase 4:** SendNotification (WA+Email + template placeholder fix) · AnnouncementController · BankAccountForm · DisbursementList (+ Export Excel button) · NotificationConfigurator (+ template preview) · BlacklistManager revoke · UserManager CRUD · SemesterRenewal · Export Excel & PDF · AutoManageScholarshipStatus (+ cron doc) · AdminDashboard Chart.js charts (score histogram + geo distribution + daily monitoring line chart) · ApproverDashboard Chart.js line chart (yearly trend) · AuditLogViewer  
 **Chart.js:** `<x-ui.chart>` Blade component · Alpine.js adapter · 3 chart types: bar, horizontalBar, line · Design token-aligned colors  
 **Infrastruktur:** Docker Compose simplified — 4 supporting services only (Redis, MinIO, Mailpit) · App & PostgreSQL on host · S3 temp file auto-cleanup configured  
-**Bug Fixes:** Login 403 redirect · Draft save duplicate key · Multi-choice checkboxes · Verifier 403 · Welcome page Dashboard link · NotificationConfigurator $eventTypes visibility · SendNotification default template placeholder · `league/flysystem-aws-s3-v3` missing → `composer require` · S3 metadata 404 after `store()` → capture metadata before store · Document uploader false loading state → `wire:loading` + `wire:key` + `x-cloak` · `computed_score` recalculation after answer correction  
+**Bug Fixes:** Login 403 redirect · Draft save duplicate key · Multi-choice checkboxes · Verifier 403 · Welcome page Dashboard link · NotificationConfigurator $eventTypes visibility · SendNotification default template placeholder · `league/flysystem-aws-s3-v3` missing → `composer require` · S3 metadata 404 after `store()` → capture metadata before store · Document uploader false loading state → `wire:loading` + `wire:key` + `x-cloak` · `computed_score` recalculation after answer correction · OTP registration redirect → Custom `RegisterResponse` + `LoginResponse` email_verified_at check  
 **Observers:** `ApplicationObserver` — hapus file fisik MinIO saat application dihapus · `ApplicationDocumentObserver` — trigger finalize score · `BlacklistLogObserver` — sync `is_blacklisted`  
 **Tests:** 14/14 passing (30 assertions) · 14 test files pending (ditunda)

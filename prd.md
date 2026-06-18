@@ -2,10 +2,10 @@
 ## Sistem Manajemen Beasiswa Generik dengan Dynamic Qualification Engine
 ### Arsitektur Monolith · Laravel 13 · Livewire v4 · Custom UI (shadcn-inspired)
 
-**Versi:** 2.0  
-**Tanggal:** Juni 2026  
+**Versi:** 2.1  
+**Tanggal:** 18 Juni 2026  
 **Status:** Final — Siap Development  
-**Changelog v2.0:**
+**Changelog v2.1 (16-18 Juni 2026):**
 - Q-01: Verifikator ditugaskan per beasiswa (relasi `scholarship_verifiers`)
 - Q-02: Model renewal berbasis kuota antar periode (slot carry-forward)
 - Q-03: Multi-program bersamaan diizinkan, satu pendaftar boleh daftar banyak program
@@ -25,6 +25,11 @@
 - Q-15: Fix Tailwind v4 JIT bug: `@source "../views";` diwajibkan di app.css agar class dari Blade terkompilasi
 - Q-16: Typography menggunakan native Tailwind (text-5xl, text-4xl) alih-alih arbitrary values untuk menghindari issue line-height "gepeng"
 - Q-17: Layout responsif wajib menggunakan container padding (px-6) untuk menghindari teks menabrak batas layar di mobile
+
+**Changelog v2.2 (18 Juni 2026):**
+- Q-18: Override Fortify `RegisterResponse` — setelah registrasi user diarahkan ke halaman OTP (`/email/verify`) bukan `/dashboard`
+- Q-19: Override Fortify `LoginResponse` — cek `email_verified_at === null`, redirect ke OTP verification page jika belum verifikasi
+- Q-20: Custom RegisterResponse binding di FortifyServiceProvider (singleton)
 
 ---
 

@@ -1,9 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Applicant;
 
+use App\Mail\OtpMail;
 use App\Services\OtpService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 
 class OtpVerification extends Component
@@ -23,9 +28,25 @@ class OtpVerification extends Component
 
         if ($channel === 'email' && $user->email_verified_at) {
             $this->verified = true;
+            return;
         }
         if ($channel === 'whatsapp' && $user->phone_verified_at) {
             $this->verified = true;
+            return;
+        }
+
+        // If an OTP was already sent (e.g. after registration), show the input field
+        $latestOtp = \App\Models\OtpVerification::where('user_id', $user->id)
+            ->where('channel', $channel)
+            ->where('is_used', false)
+            ->where('expires_at', '>', now())
+            ->latest('created_at')
+            ->first();
+
+        if ($latestOtp) {
+            $this->codeSent = true;
+            $this->canResend = false;
+            $this->countdown = $this->calculateRemainingCooldown($latestOtp);
         }
     }
 
@@ -44,7 +65,20 @@ class OtpVerification extends Component
             return;
         }
 
-        $service->generate($user, $this->channel);
+        $result = $service->generate($user, $this->channel);
+
+        try {
+            Mail::to($user->email)->send(new OtpMail($result['plain']));
+        } catch (\Throwable $e) {
+            Log::error('OTP email failed', [
+                'user_id' => $user->id,
+                'channel' => $this->channel,
+                'error' => $e->getMessage(),
+            ]);
+            $this->error = 'Gagal mengirim email. Silakan coba lagi.';
+            return;
+        }
+
         $this->codeSent = true;
         $this->error = '';
         $this->canResend = false;
@@ -62,6 +96,7 @@ class OtpVerification extends Component
             $this->verified = true;
             $this->error = '';
             $this->dispatch('otp-verified');
+            $this->redirect(route('applicant.dashboard'));
         } else {
             $this->error = 'Kode OTP salah atau sudah kadaluarsa.';
         }
@@ -75,5 +110,18 @@ class OtpVerification extends Component
         if ($this->countdown <= 0) {
             $this->canResend = true;
         }
+    }
+
+    private function calculateRemainingCooldown(\App\Models\OtpVerification $otp): int
+    {
+        $secondsSinceCreated = (int) $otp->created_at->diffInSeconds(now());
+        $remaining = 60 - $secondsSinceCreated;
+
+        if ($remaining <= 0) {
+            $this->canResend = true;
+            return 0;
+        }
+
+        return $remaining;
     }
 }

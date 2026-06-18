@@ -16,6 +16,11 @@ class LoginResponse implements LoginResponseContract
         /** @var \App\Models\User $user */
         $user = $request->user();
 
+        // If email is not verified, redirect to OTP verification page
+        if ($user->email_verified_at === null) {
+            return redirect()->route('verification.notice');
+        }
+
         $fallback = match (true) {
             $user->hasRole('super-admin') => $this->route('admin.dashboard'),
             $user->hasRole('admin') => $this->route('admin.dashboard'),

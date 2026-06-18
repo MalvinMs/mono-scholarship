@@ -15,6 +15,11 @@ Route::middleware('guest')->group(function () {
     Route::view('/login', 'auth.login')->name('login');
 });
 
+// OTP verification page (authenticated but not yet verified)
+Route::middleware('auth')->group(function () {
+    Route::view('/email/verify', 'auth.verify-email')->name('verification.notice');
+});
+
 // All authenticated routes
 Route::middleware(['auth', 'verified'])->group(function () {
 

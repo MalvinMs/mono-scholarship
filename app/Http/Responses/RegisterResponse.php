@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Responses;
+
+use Illuminate\Http\JsonResponse;
+use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
+
+final class RegisterResponse implements RegisterResponseContract
+{
+    public function toResponse($request)
+    {
+        if ($request->wantsJson()) {
+            return new JsonResponse('', 201);
+        }
+
+        // After registration, send user to OTP email verification
+        return redirect()->route('verification.notice');
+    }
+}

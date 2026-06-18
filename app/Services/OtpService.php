@@ -8,7 +8,12 @@ use Illuminate\Support\Facades\Hash;
 
 final class OtpService
 {
-    public function generate(User $user, string $channel): OtpVerification
+    /**
+     * Generate and persist an OTP code.
+     *
+     * @return array{otp: OtpVerification, plain: string}
+     */
+    public function generate(User $user, string $channel): array
     {
         // Invalidate old unused codes
         OtpVerification::where('user_id', $user->id)
@@ -18,13 +23,15 @@ final class OtpService
 
         $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        return OtpVerification::create([
+        $otp = OtpVerification::create([
             'user_id' => $user->id,
             'channel' => $channel,
             'code' => Hash::make($code),
             'expires_at' => now()->addMinutes(5),
             'created_at' => now(),
         ]);
+
+        return ['otp' => $otp, 'plain' => $code];
     }
 
     public function verify(User $user, string $channel, string $inputCode): bool
