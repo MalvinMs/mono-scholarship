@@ -45,7 +45,7 @@
                     <x-ui.input label="Nama Lengkap" type="text" name="name" :value="old('name', auth()->user()->name)" required />
                     <x-ui.input label="Email" type="email" name="email" :value="old('email', auth()->user()->email)" required />
                     <x-ui.input label="Nomor WhatsApp" type="text" name="phone" :value="old('phone', auth()->user()->phone)" />
-                    <x-ui.input label="NIK" type="text" value="********" disabled readonly />
+                    <x-ui.input label="NIK" type="text" name="nik" :value="old('nik', auth()->user()->nik)" readonly />
                     <x-ui.input label="Tempat Lahir" type="text" name="birth_place" :value="old('birth_place', auth()->user()->birth_place)" />
                     <x-ui.input label="Tanggal Lahir" type="date" name="birth_date" :value="old('birth_date', auth()->user()->birth_date?->format('Y-m-d'))" />
                 </div>
