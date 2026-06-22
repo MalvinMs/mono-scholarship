@@ -172,6 +172,8 @@ class QualificationBuilder extends Component
     public function selectQual(int $id): void
     {
         $this->selectedQualId = $id;
+        $this->optionQualId = $id;
+        $this->rangeQualId = $id;
     }
 
     public function deleteQual(int $id): void

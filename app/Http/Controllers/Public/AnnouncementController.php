@@ -10,6 +10,15 @@ use Illuminate\Routing\Controller;
 
 class AnnouncementController extends Controller
 {
+    public function list()
+    {
+        $scholarships = Scholarship::where('status', 'announced')
+            ->orderByDesc('updated_at')
+            ->get(['id', 'name', 'slug', 'description', 'updated_at']);
+
+        return view('public.announcement-list', ['scholarships' => $scholarships]);
+    }
+
     public function index(Scholarship $scholarship)
     {
         if ($scholarship->status !== 'announced') {

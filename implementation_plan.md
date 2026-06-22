@@ -1,9 +1,9 @@
 # Implementation Plan — Platform Beasiswa Multi-Program
 
-**Versi:** 1.9
-**Tanggal:** 18 Juni 2026 (Fase 4 complete + bug fixes + OTP registration redirect fix)
-**Referensi:** `prd.md` v2.1  
-**Tech Stack:** Laravel 13 · Livewire v4 · Custom UI (shadcn-inspired) · PostgreSQL 16 · Redis · MinIO
+**Versi:** 2.0
+**Tanggal:** 22 Juni 2026 (Fase 4 complete + post-MVP fixes: random registration number, announcement list, recipient status update, Redis via Predis, applicant log timeline)
+**Referensi:** `prd.md` v2.3  
+**Tech Stack:** Laravel 13 · Livewire v4 · Custom UI (shadcn-inspired) · PostgreSQL 16 · Redis (Predis) · MinIO
 
 ---
 
@@ -27,7 +27,7 @@
 | Icons | Lucide Icons (blade-lucide-icons) | `/mallardduck/blade-lucide-icons` |
 | JS Utilitas | Alpine.js | `/websites/alpinejs_dev` |
 | Database | PostgreSQL 16 | Laravel PostgreSQL driver |
-| Cache / Queue | Redis | `/redis/docs` |
+| Cache / Queue | Redis (Predis client v3.5) | `/redis/docs` |
 | File Storage | MinIO (S3-compatible) + league/flysystem-aws-s3-v3 | `/minio/docs` |
 | Authentication | Laravel Fortify | `/laravel/fortify` |
 | RBAC | Spatie Permission v8 | `/websites/spatie_be_laravel-permission_v7` |
@@ -129,7 +129,7 @@
 | 1.1.4 | Alpine.js (bundled Livewire) + Lucide Icons | [x] | | `composer require mallardduck/blade-lucide-icons` |
 | 1.1.5 | Konfigurasi PostgreSQL connection di `.env` | [x] | | `DB_CONNECTION=pgsql` + host/port/db/user/pass |
 | 1.1.6 | Konfigurasi Redis connection di `.env` | [x] | | `REDIS_HOST`, `REDIS_PASSWORD`, `REDIS_PORT` |
-| 1.1.7 | Atur `config/queue.php` — driver `redis` | [x] | | Queue connection untuk batch scoring jobs |
+| 1.1.7 | Install `predis/predis ^3.5` — `composer require predis/predis` | [x] | | Redis via pure-PHP Predis, no phpredis extension dependency |
 | 1.1.8 | Atur `config/cache.php` — default `redis` | [x] | | Session, cache, rate limiter via Redis |
 | 1.1.9 | Verifikasi semua dependencies berfungsi (`php artisan about`) | [x] | | |
 
@@ -462,6 +462,18 @@
 | 7 | 500: `UnableToRetrieveMetadata` — `file_size` 404 after `store()` | `SubmitApplication.php`, `DocumentRevision.php`, `SemesterRenewal.php` | Capture metadata (`getSize`, `getMimeType`, `getClientOriginalName`) BEFORE `$file->store()` |
 | 8 | Document uploader stuck di loading state saat navigasi step | `document-uploader.blade.php` | Ganti Alpine.js events → native `wire:loading` + `wire:key` + `x-cloak` CSS rule |
 | 9 | SendNotification template tidak replace placeholder | `app/Jobs/SendNotification.php` | Apply `str_replace` to both template AND default messages |
+
+### 3G. Post-MVP Fixes (22 Juni 2026)
+
+| # | Issue | File | Fix |
+|---|-------|------|-----|
+| P1 | Duplicate key violation `applications_registration_number_unique` saat apply (sequential count race) | `app/Actions/Application/SubmitApplication.php` | Ganti nomor registrasi sequential → random 8-char alphanumeric suffix (`Str::random(8)`); format `{PREFIX}{YEAR}-{SUFFIX}` — no lock, no collision (Q-21) |
+| P2 | Class "Redis" not found saat jalankan batch skoring (phpredis extension tidak ter-install) | `composer.json` | Install `predis/predis ^3.5` — Redis via pure-PHP Predis client, no extension dependency (Q-24) |
+| P3 | Pendaftar cadangan / tidak_lolos statusnya tetap `verified` setelah penetapan penerima | `app/Livewire/Approver/RecipientApproval.php` | Update status cadangan → `verified`, tidak_lolos → `rejected` saat `approveRecipients()`; notifikasi sukses menampilkan jumlah penerima `utama` (Q-23) |
+| P4 | Tidak ada halaman daftar semua program yang sudah diumumkan | `app/Http/Controllers/Public/AnnouncementController.php`, `resources/views/public/announcement-list.blade.php`, `routes/web.php` | Tambah `GET /pengumuman` → `AnnouncementController::list()` — daftar semua scholarship berstatus `announced` (Q-22) |
+| P5 | Dashboard pendaftar tidak ada akses cepat ke form rekening untuk penerima | `resources/views/applicant/dashboard.blade.php`, `resources/views/livewire/applicant/application-status.blade.php` | Tombol "Data Rekening" muncul saat status `selected` — border-l badge `success` + label status readable (Q-25) |
+| P6 | Tab "Log Verifikasi" pendaftar menampilkan data dummy/mock | `app/Livewire/Applicant/ApplicationStatus.php`, `application-status.blade.php` | Eager load `verificationLogs.verifier` + `score`; render timeline lengkap dari `verification_logs` (submit → koreksi/doc actions → skor final → hasil seleksi → penetapan) (Q-26) |
+| P7 | Sidebar footer: area profil & tombol logout layout tidak rapi | `resources/views/components/layouts/sidebar.blade.php` | Profil + logout sejajar (profile clickable ke `/profile`, logout tombol terpisah dengan shrink-0) (Q-27) |
 
 ### 3F. UI/UX Enhancements (Fase 2A–3)
 
@@ -942,13 +954,14 @@ php artisan make:export ApplicantsExport --model=Application
 
 **Progress Keseluruhan:** Fase 0 ✅ · Fase 1 ✅ · Fase 2 ✅ · Fase 3 ✅ · Fase 4 ✅ (MVP Complete)  
 **Fase Selanjutnya:** Fase 5 — Integrasi & Skalabilitas (Opsional / Post-MVP: PDDikti, DTKS, multi-tenancy)  
-**Terakhir Update:** 18 Juni 2026 (OTP registration redirect fix: Custom RegisterResponse + LoginResponse email_verified_at check)  
+**Terakhir Update:** 22 Juni 2026 (Post-MVP: random registration number · Predis · announcement list · recipient status fix · real verification logs · dashboard bank button · sidebar polish)  
 **Refactor UI:** Flowbite dihapus · 28 custom shadcn-inspired components (termasuk `<x-ui.chart>` + `<x-ui.document-uploader>`) · CSS 57KB · JS 188KB (Chart.js tree-shaken)  
 **Fase 2:** OTP · DynamicFormRenderer · ApplicationForm multi-step · File Upload 2MB MinIO (+ draft file persistence + `wire:loading` uploader + preview + step review document list) · SubmitApplication Action (+ metadata capture before store) · ApplicationStatus tracker · DocumentRevision · BBK Madiun Seeder  
 **Fase 3:** VerificationQueue + ApplicationDetail · Verify Actions (Approve/Reject/Correct/Finalize) · Blacklist System · ProcessBatchScoring Job (+ progress tracking Redis Cache) · ApplyTieBreaker · BatchSelectionRunner (+ wire:poll progress bar) · SelectionResult (+ detail breakdown & tiebreaker_log expandable) · RecipientApproval (+ dispatch notifikasi) · All 14 BV implemented  
 **Fase 4:** SendNotification (WA+Email + template placeholder fix) · AnnouncementController · BankAccountForm · DisbursementList (+ Export Excel button) · NotificationConfigurator (+ template preview) · BlacklistManager revoke · UserManager CRUD · SemesterRenewal · Export Excel & PDF · AutoManageScholarshipStatus (+ cron doc) · AdminDashboard Chart.js charts (score histogram + geo distribution + daily monitoring line chart) · ApproverDashboard Chart.js line chart (yearly trend) · AuditLogViewer  
+**Post-MVP Fixes (22 Juni):** Registration number random (8-char) replace sequential count → no collision · `predis/predis ^3.5` replace phpredis extension · Announcement list page (`/pengumuman`) + nav link · RecipientApproval: cadangan→`verified`, tidak_lolos→`rejected` · Dashboard applicant "Data Rekening" button on status `selected` · VerificationLogs real timeline (submit→koreksi→skor final→seleksi→penetapan) · Sidebar footer layout polish  
 **Chart.js:** `<x-ui.chart>` Blade component · Alpine.js adapter · 3 chart types: bar, horizontalBar, line · Design token-aligned colors  
 **Infrastruktur:** Docker Compose simplified — 4 supporting services only (Redis, MinIO, Mailpit) · App & PostgreSQL on host · S3 temp file auto-cleanup configured  
-**Bug Fixes:** Login 403 redirect · Draft save duplicate key · Multi-choice checkboxes · Verifier 403 · Welcome page Dashboard link · NotificationConfigurator $eventTypes visibility · SendNotification default template placeholder · `league/flysystem-aws-s3-v3` missing → `composer require` · S3 metadata 404 after `store()` → capture metadata before store · Document uploader false loading state → `wire:loading` + `wire:key` + `x-cloak` · `computed_score` recalculation after answer correction · OTP registration redirect → Custom `RegisterResponse` + `LoginResponse` email_verified_at check  
+**Bug Fixes:** Login 403 redirect · Draft save duplicate key · Multi-choice checkboxes · Verifier 403 · Welcome page Dashboard link · NotificationConfigurator $eventTypes visibility · SendNotification default template placeholder · `league/flysystem-aws-s3-v3` missing → `composer require` · S3 metadata 404 after `store()` → capture metadata before store · Document uploader false loading state → `wire:loading` + `wire:key` + `x-cloak` · `computed_score` recalculation after answer correction · OTP registration redirect → Custom `RegisterResponse` + `LoginResponse` email_verified_at check · Class "Redis" not found → `predis/predis` · Registration number duplicate key → random alphanumeric · Penerima cadangan/tidak_lolos status tidak terupdate → RecipientApproval fix  
 **Observers:** `ApplicationObserver` — hapus file fisik MinIO saat application dihapus · `ApplicationDocumentObserver` — trigger finalize score · `BlacklistLogObserver` — sync `is_blacklisted`  
 **Tests:** 14/14 passing (30 assertions) · 14 test files pending (ditunda)

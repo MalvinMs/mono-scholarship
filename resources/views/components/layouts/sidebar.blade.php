@@ -8,9 +8,7 @@ $isActive = fn (string $pattern) => request()->is($pattern);
     {{-- Header --}}
     <div class="flex h-14 shrink-0 items-center gap-2 border-b border-hairline px-6" data-sidebar="header">
         <a href="{{ url('/') }}" class="flex items-center gap-2.5 font-semibold">
-            <span class="flex size-8 items-center justify-center rounded-sm bg-primary text-on-primary">
-                <x-lucide-graduation-cap class="size-4" />
-            </span>
+            <img src="{{ asset('favicon.png') }}" alt="Logo" class="size-8 rounded-sm object-cover shadow-sm" />
             <span class="text-button-md tracking-tight">Beasiswa</span>
         </a>
     </div>
@@ -66,22 +64,25 @@ $isActive = fn (string $pattern) => request()->is($pattern);
 
     {{-- Footer --}}
     <div class="mt-auto border-t border-hairline" data-sidebar="footer">
-        <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-canvas-soft">
-            <div class="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary text-on-primary text-xs font-semibold">
-                {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+        <div class="flex items-center gap-3 px-5 py-3">
+            <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 flex-1 min-w-0 transition-colors hover:opacity-75">
+                <div class="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary text-on-primary text-xs font-semibold">
+                    {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-body-sm-strong text-ink">{{ auth()->user()->name }}</p>
+                    <p class="truncate text-caption text-mute">{{ auth()->user()->email }}</p>
+                </div>
+            </a>
+            <div class="flex items-center gap-1 shrink-0">
+                <x-ui.theme-toggle />
+                <form method="POST" action="{{ url('/logout') }}">
+                    @csrf
+                    <button type="submit" title="Logout" class="flex size-8 items-center justify-center rounded-sm text-mute transition-colors hover:bg-canvas-soft hover:text-ink">
+                        <x-lucide-log-out class="size-4" />
+                    </button>
+                </form>
             </div>
-            <div class="min-w-0 flex-1">
-                <p class="truncate text-body-sm-strong text-ink">{{ auth()->user()->name }}</p>
-                <p class="truncate text-caption text-mute">{{ auth()->user()->email }}</p>
-            </div>
-        </a>
-        <div class="flex justify-end px-5 pb-3">
-            <form method="POST" action="{{ url('/logout') }}">
-                @csrf
-                <button type="submit" title="Logout" class="flex size-7 items-center justify-center rounded-sm text-mute transition-colors hover:bg-canvas-soft hover:text-ink">
-                    <x-lucide-log-out class="size-3.5" />
-                </button>
-            </form>
         </div>
     </div>
 </nav>

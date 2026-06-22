@@ -1,12 +1,18 @@
 <?php
 
 use App\Http\Controllers\Public\AnnouncementController;
+use App\Http\Controllers\Public\HomeController;
+use App\Http\Controllers\Public\ProgramController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes (no auth)
-Route::get('/', fn () => view('welcome'))->name('home');
+Route::get('/', HomeController::class)->name('home');
+
+// Public programs
+Route::get('/program', ProgramController::class)->name('program.list');
 
 // Public announcement
+Route::get('/pengumuman', [AnnouncementController::class, 'list'])->name('announcement.list');
 Route::get('/pengumuman/{scholarship:slug}', [AnnouncementController::class, 'index'])->name('announcement');
 Route::get('/pengumuman/{scholarship:slug}/cek', [AnnouncementController::class, 'check'])->name('announcement.check');
 

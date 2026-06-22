@@ -3,7 +3,7 @@
         <div class="w-full max-w-sm">
             <x-ui.card padding="lg">
                 <div class="mb-6 text-center">
-                    <x-lucide-graduation-cap class="mx-auto size-10 text-primary" />
+                    <img src="{{ asset('favicon.png') }}" alt="Logo" class="mx-auto size-12 rounded-sm object-contain" />
                     <h1 class="mt-4 text-display-xs text-ink">Login</h1>
                     <p class="mt-1 text-body-sm text-mute">Masuk ke akun Platform Beasiswa</p>
                 </div>

@@ -16,11 +16,11 @@ $variants = [
 ];
 
 $sizes = [
-    'sm' => 'h-7 px-3 text-sm font-medium rounded-sm', // 28px nav scale
-    'default' => 'h-10 px-4 py-2 text-button-md rounded-sm', // 40px in-app scale
-    'pill' => 'h-12 px-6 text-button-lg rounded-pill', // 48px marketing
-    'pill-sm' => 'h-8 px-4 text-button-md rounded-pill',
-    'icon' => 'size-10 rounded-sm',
+    'sm' => 'h-8 px-3.5 text-sm font-medium rounded-md', // 32px nav scale
+    'default' => 'h-10 px-5 py-2 text-button-md rounded-md', // 40px in-app scale
+    'pill' => 'h-12 px-7 text-button-lg rounded-pill', // 48px marketing
+    'pill-sm' => 'h-8 px-5 text-button-md rounded-full',
+    'icon' => 'size-10 rounded-md',
     'icon-circular' => 'size-8 rounded-full border border-hairline bg-canvas hover:bg-canvas-soft',
 ];
 

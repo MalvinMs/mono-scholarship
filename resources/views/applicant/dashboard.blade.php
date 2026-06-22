@@ -18,6 +18,7 @@
                 @php
                     $statusColor = match($app->status) {
                         'verified' => 'border-l-success',
+                        'selected' => 'border-l-success',
                         'submitted' => 'border-l-primary',
                         'rejected' => 'border-l-destructive',
                         default => 'border-l-mute/30',
@@ -34,11 +35,19 @@
                                 'draft' => 'secondary',
                                 'submitted' => 'default',
                                 'verified' => 'success',
+                                'selected' => 'success',
                                 'rejected' => 'destructive',
                                 default => 'warning'
-                            }">{{ ucfirst($app->status) }}</x-ui.badge>
+                            }">{{ ucfirst(str_replace('_', ' ', $app->status)) }}</x-ui.badge>
                             @if($app->status !== 'draft')
-                                <x-ui.button size="sm" variant="outline" href="{{ route('application.status', $app->id) }}">Detail</x-ui.button>
+                                <div class="flex items-center gap-2">
+                                    <x-ui.button size="sm" variant="outline" href="{{ route('application.status', $app->id) }}">Detail</x-ui.button>
+                                    @if($app->status === 'selected')
+                                        <x-ui.button size="sm" variant="primary" href="{{ route('application.bank', $app->id) }}">
+                                            <x-lucide-banknote class="size-3.5" />Rekening
+                                        </x-ui.button>
+                                    @endif
+                                </div>
                             @endif
                         </div>
                     </div>

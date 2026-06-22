@@ -25,6 +25,13 @@
                     <x-ui.button href="{{ route('application.revision', $application->id) }}" variant="destructive">Upload Ulang Dokumen</x-ui.button>
                 </div>
             @endif
+            @if($application->status === 'selected')
+                <div class="shrink-0">
+                    <x-ui.button href="{{ route('application.bank', $application->id) }}" variant="primary">
+                        <x-lucide-banknote class="size-4" />Data Rekening
+                    </x-ui.button>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -91,20 +98,108 @@
         @endif
     </div>
 
-    {{-- Tab Content: Logs (Mock) --}}
+    {{-- Tab Content: Logs --}}
     <div x-show="activeTab === 'logs'" class="animate-fade-in" style="display: none;">
         <x-ui.card>
             <div class="space-y-6">
-                <div class="flex gap-4 relative">
-                    <div class="absolute left-[11px] top-7 bottom-[-24px] w-px bg-hairline"></div>
-                    <div class="mt-1 flex size-6 shrink-0 items-center justify-center rounded-full bg-canvas-soft ring-4 ring-canvas z-10 border border-hairline">
-                        <div class="size-2 rounded-full bg-mute"></div>
+                @php
+                    $events = [];
+                    // 1. Pendaftaran dibuat
+                    $events[] = [
+                        'icon' => 'file-text',
+                        'title' => 'Pendaftaran Diajukan',
+                        'description' => $application->registration_number,
+                        'date' => $application->created_at,
+                    ];
+                    // 2. Status changes from verification_logs
+                    foreach ($application->verificationLogs as $log) {
+                        $verifierName = $log->verifier?->name ?? 'Verifikator';
+                        $actionLabels = [
+                            'document_approved' => 'Dokumen disetujui',
+                            'document_rejected' => 'Dokumen ditolak',
+                            'document_rerequested' => 'Dokumen diminta ulang',
+                            'answer_corrected' => 'Jawaban dikoreksi',
+                            'status_changed' => 'Status diubah menjadi ' . ucfirst(str_replace('_', ' ', $log->new_value ?? '')),
+                            'applicant_blacklisted' => 'Pendaftar diblacklist',
+                        ];
+                        $title = $actionLabels[$log->action] ?? $log->action;
+                        $description = $log->reason;
+                        if ($log->field_changed) {
+                            $description = "{$log->field_changed}: {$log->old_value} → {$log->new_value} — {$log->reason}";
+                        }
+                        $events[] = [
+                            'icon' => match($log->action) {
+                                'document_approved' => 'badge-check',
+                                'document_rejected' => 'x-circle',
+                                'answer_corrected' => 'pencil',
+                                'applicant_blacklisted' => 'user-x',
+                                default => 'activity',
+                            },
+                            'title' => $title,
+                            'description' => $description,
+                            'date' => $log->created_at,
+                            'actor' => $verifierName,
+                        ];
+                    }
+                    // 3. Score finalized
+                    if ($application->status === 'verified' || $application->status === 'selected') {
+                        $events[] = [
+                            'icon' => 'shield-check',
+                            'title' => 'Verifikasi Selesai — Skor Final',
+                            'description' => $application->score ? 'Total skor: ' . $application->score->total_score . '/' . $application->score->max_possible_score : '',
+                            'date' => $application->verified_at,
+                        ];
+                    }
+                    // 4. Selection result
+                    if ($application->score && $application->score->selection_result) {
+                        $resultLabel = match($application->score->selection_result) {
+                            'utama' => 'Lolos Utama',
+                            'cadangan' => 'Lolos Cadangan',
+                            default => 'Tidak Lolos',
+                        };
+                        $events[] = [
+                            'icon' => match($application->score->selection_result) {
+                                'utama' => 'trophy',
+                                'cadangan' => 'list-checks',
+                                default => 'x-circle',
+                            },
+                            'title' => 'Hasil Seleksi: ' . $resultLabel,
+                            'description' => 'Ranking: #' . ($application->score->rank ?? 'N/A') . ' | Skor: ' . $application->score->total_score . '/' . $application->score->max_possible_score,
+                            'date' => $application->score->finalized_at ?: $application->score->calculated_at,
+                        ];
+                    }
+                    // 5. Selected
+                    if ($application->status === 'selected') {
+                        $events[] = [
+                            'icon' => 'graduation-cap',
+                            'title' => 'Ditetapkan sebagai Penerima',
+                            'description' => 'Selamat! Anda telah ditetapkan sebagai penerima beasiswa.',
+                            'date' => $application->selected_at,
+                        ];
+                    }
+                    // Sort by date descending
+                    usort($events, fn($a, $b) => ($b['date'] ?? now()) <=> ($a['date'] ?? now()));
+                @endphp
+                @foreach($events as $index => $event)
+                    <div class="flex gap-4 relative">
+                        @if($index < count($events) - 1)
+                            <div class="absolute left-[11px] top-7 bottom-[-24px] w-px bg-hairline"></div>
+                        @endif
+                        <div class="mt-1 flex size-6 shrink-0 items-center justify-center rounded-full {{ $event['title'] === 'Pendaftaran Diajukan' ? 'bg-primary/10 ring-primary/20' : 'bg-canvas-soft ring-hairline/50' }} ring-4 z-10 border border-hairline">
+                            <x-lucide-{{ $event['icon'] }} class="size-3 {{ $event['title'] === 'Pendaftaran Diajukan' ? 'text-primary' : 'text-mute' }}" />
+                        </div>
+                        <div>
+                            <p class="text-body-sm-strong text-ink">{{ $event['title'] }}</p>
+                            @if(!empty($event['description']))
+                                <p class="text-body-sm text-mute mt-0.5">{{ $event['description'] }}</p>
+                            @endif
+                            @if(!empty($event['actor']))
+                                <p class="text-caption text-mute mt-1">oleh {{ $event['actor'] }}</p>
+                            @endif
+                            <p class="text-caption text-mute mt-1">{{ $event['date'] ? $event['date']->format('d M Y, H:i') : '' }}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-body-sm-strong text-ink">Pendaftaran Diajukan</p>
-                        <p class="text-caption text-mute mt-1">{{ $application->created_at ? $application->created_at->format('d M Y, H:i') : 'N/A' }}</p>
-                    </div>
-                </div>
+                @endforeach
             </div>
         </x-ui.card>
     </div>

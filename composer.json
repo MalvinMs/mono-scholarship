@@ -16,6 +16,7 @@
         "mallardduck/blade-lucide-icons": "^1.26",
         "pestphp/pest": "^4.7",
         "pestphp/pest-plugin-laravel": "^4.1",
+        "predis/predis": "^3.5",
         "spatie/laravel-permission": "^8.0"
     },
     "require-dev": {

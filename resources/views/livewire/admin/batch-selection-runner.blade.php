@@ -75,9 +75,10 @@
             @endif
         </div>
 
-        @if($polling && !empty($progress))
+        @if($polling)
             <div class="mt-6 animate-scale-in" wire:poll.2s="checkProgress">
                 <x-ui.card>
+                    @if(!empty($progress))
                     <div class="flex items-center gap-4">
                         <div class="flex items-center justify-center size-10 shrink-0 rounded-full bg-primary/10 border border-primary/20">
                             <x-lucide-loader-circle class="size-5 text-primary animate-spin" />
@@ -90,6 +91,20 @@
                             <p class="text-caption text-mute mt-1">Tahap: {{ str_replace('_', ' ', $progress['stage']) }}</p>
                         </div>
                     </div>
+                    @else
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center justify-center size-10 shrink-0 rounded-full bg-primary/10 border border-primary/20">
+                            <x-lucide-loader-circle class="size-5 text-primary animate-spin" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-body-sm font-medium text-ink">Menunggu job antrian dimulai...</p>
+                            <div class="mt-2 h-1.5 w-full rounded-full bg-canvas-soft-2 overflow-hidden">
+                                <div class="h-full rounded-full bg-primary animate-pulse transition-all duration-700" style="width: 5%"></div>
+                            </div>
+                            <p class="text-caption text-mute mt-1">Job telah dikirim ke queue. Pastikan queue worker berjalan.</p>
+                        </div>
+                    </div>
+                    @endif
                 </x-ui.card>
             </div>
         @endif

@@ -2,10 +2,19 @@
 ## Sistem Manajemen Beasiswa Generik dengan Dynamic Qualification Engine
 ### Arsitektur Monolith · Laravel 13 · Livewire v4 · Custom UI (shadcn-inspired)
 
-**Versi:** 2.1  
-**Tanggal:** 18 Juni 2026  
+**Versi:** 2.3  
+**Tanggal:** 22 Juni 2026  
 **Status:** Final — Siap Development  
-**Changelog v2.1 (16-18 Juni 2026):**
+**Changelog v2.3 (22 Juni 2026):**
+- Q-21: Nomor registrasi di-randomisasi (8-char alphanumeric) untuk menghindari collision — tidak lagi sequential
+- Q-22: Halaman daftar pengumuman publik (`/pengumuman`) — pendaftar dapat melihat semua program yang sudah diumumkan
+- Q-23: RecipientApproval memperbarui status cadangan → `verified` dan tidak_lolos → `rejected` saat penetapan
+- Q-24: Redis menggunakan Predis client (package `predis/predis`) sebagai pengganti phpredis extension
+- Q-25: Dashboard pendaftar — tombol "Data Rekening" muncul untuk penerima yang sudah ditetapkan (status `selected`)
+- Q-26: Log verifikasi pendaftar sekarang menampilkan riwayat lengkap dari `verification_logs` (bukan mock data)
+- Q-27: Sidebar footer — layout profil dan logout dirapikan (sejajar, clickable profile area)
+
+**Changelog v2.2 (18 Juni 2026):**
 - Q-01: Verifikator ditugaskan per beasiswa (relasi `scholarship_verifiers`)
 - Q-02: Model renewal berbasis kuota antar periode (slot carry-forward)
 - Q-03: Multi-program bersamaan diizinkan, satu pendaftar boleh daftar banyak program
@@ -587,7 +596,7 @@ created_at, updated_at
 id                      BIGINT PRIMARY KEY
 scholarship_id          BIGINT FK → scholarships.id
 user_id                 BIGINT FK → users.id
-registration_number     VARCHAR(50) UNIQUE NOT NULL   -- generated: BBK2025-00001
+registration_number     VARCHAR(50) UNIQUE NOT NULL   -- generated: BBK2025-A3F7B2DC (random 8-char alphanumeric, no sequential collision)
 snapshot_profile        JSONB NOT NULL                -- snapshot user data saat submit (immutable)
 status                  ENUM(draft,submitted,under_review,needs_revision,verified,selected,rejected)
 is_renewal              BOOLEAN DEFAULT false
@@ -1157,6 +1166,7 @@ ProcessBatchScoring::handle()
 GET  /                                         → Landing, info platform, daftar program aktif
 GET  /daftar                                   → Registrasi akun pendaftar
 GET  /login
+GET  /pengumuman                               → Daftar semua program yang sudah diumumkan
 GET  /pengumuman/{scholarship:slug}            → Hasil seleksi publik per program
 GET  /pengumuman/{scholarship:slug}/{reg_no}   → Detail hasil per pendaftar
 ```

@@ -152,10 +152,10 @@ final class SubmitApplication
     {
         $prefix = strtoupper(Str::substr($scholarship->slug, 0, 5));
         $year = now()->format('Y');
-        $count = Application::where('scholarship_id', $scholarship->id)
-            ->whereNotNull('registration_number')
-            ->count() + 1;
 
-        return sprintf('%s%s-%05d', $prefix, $year, $count);
+        // BV-01: Random 8-char alphanumeric suffix — no sequential collision, no lock needed.
+        $suffix = strtoupper(Str::random(8));
+
+        return sprintf('%s%s-%s', $prefix, $year, $suffix);
     }
 }

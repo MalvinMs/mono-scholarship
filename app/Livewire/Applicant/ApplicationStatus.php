@@ -13,6 +13,8 @@ class ApplicationStatus extends Component
     {
         $this->application = $application->load([
             'scholarship', 'documents',
+            'verificationLogs.verifier',
+            'score',
         ]);
     }
 

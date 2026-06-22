@@ -55,6 +55,17 @@ class RecipientApproval extends Component
                 'selected_at' => now(),
             ]);
 
+        // BV-04: Update cadangan and failed application statuses
+        Application::query()
+            ->where('scholarship_id', $this->scholarshipId)
+            ->whereHas('score', fn($q) => $q->where('selection_result', 'cadangan'))
+            ->update(['status' => 'verified']);
+
+        Application::query()
+            ->where('scholarship_id', $this->scholarshipId)
+            ->whereHas('score', fn($q) => $q->where('selection_result', 'tidak_lolos'))
+            ->update(['status' => 'rejected']);
+
         // Announce scholarship
         $scholarship->update(['status' => 'announced']);
 
@@ -63,7 +74,12 @@ class RecipientApproval extends Component
 
         $this->showConfirm = false;
 
-        $this->dispatch('notify', type: 'success', message: 'Penetapan penerima berhasil. Beasiswa telah diumumkan dan notifikasi sedang dikirim.');
+        $primaryCount = ApplicationScore::query()
+            ->where('scholarship_id', $this->scholarshipId)
+            ->where('selection_result', 'utama')
+            ->count();
+
+        $this->dispatch('notify', type: 'success', message: "Penetapan penerima berhasil ({$primaryCount} penerima). Beasiswa telah diumumkan dan notifikasi sedang dikirim.");
     }
 
     private function dispatchNotifications(Scholarship $scholarship): void
