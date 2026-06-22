@@ -25,7 +25,7 @@ class AdminDashboard extends Component
             $scoreQuery->where('scholarship_id', $this->scholarshipId);
         }
 
-        $totalApplications = Application::count();
+        $totalApplications = (clone $applicationQuery)->count();
         $activeScholarships = Scholarship::where('status', 'open')->count();
         $totalScholarships = Scholarship::count();
 
@@ -51,11 +51,8 @@ class AdminDashboard extends Component
                 'quota' => $s->quota_primary,
             ]);
 
-        // Score distribution histogram
-        $scoreDistribution = $this->buildScoreDistribution($scoreQuery);
-
-        // Geographic distribution
-        $geoDistribution = $this->buildGeoDistribution($applicationQuery);
+        // Status distribution (Donut chart)
+        $statusDistribution = $this->buildStatusDistribution($statusCounts);
 
         // Daily submission monitoring
         $dailySubmissions = $this->buildDailySubmissions($applicationQuery);
@@ -65,73 +62,60 @@ class AdminDashboard extends Component
             'totalApplications', 'activeScholarships', 'totalScholarships',
             'statusCounts', 'verifiedCount', 'selectedCount', 'totalVerified', 'revisionCount',
             'scholarshipStats',
-            'scoreDistribution', 'geoDistribution',
+            'statusDistribution',
             'dailySubmissions',
         ))->layout('components.layouts.app', ['title' => 'Dashboard Admin']);
     }
 
-    private function buildScoreDistribution($scoreQuery): array
+    private function buildStatusDistribution(array $statusCounts): array
     {
-        $scores = (clone $scoreQuery)->where('is_final', true)->pluck('total_score');
-        if ($scores->isEmpty()) return [];
+        if (empty($statusCounts)) return [];
 
-        $maxScore = $scores->max();
-        $bucketCount = min(8, max(4, (int) ceil($maxScore / 10)));
-        $bucketSize = max(1, (int) ceil($maxScore / $bucketCount));
+        $labelsMap = [
+            'draft' => 'Draft',
+            'submitted' => 'Submit',
+            'under_review' => 'Review',
+            'needs_revision' => 'Revisi',
+            'verified' => 'Terverifikasi',
+            'selected' => 'Ditetapkan',
+            'rejected' => 'Ditolak',
+        ];
+
+        // Design colors matching the Tailwind classes
+        $colorsMap = [
+            'draft' => '#666666',
+            'submitted' => '#171717',
+            'under_review' => '#f5a623',
+            'needs_revision' => '#e00',
+            'verified' => '#0070f3',
+            'selected' => '#0070f3',
+            'rejected' => '#e00',
+        ];
 
         $labels = [];
         $data = [];
-        for ($i = 0; $i < $bucketCount; $i++) {
-            $min = $i * $bucketSize;
-            $max = ($i + 1) * $bucketSize;
-            $labels[] = $i === $bucketCount - 1 ? "{$min}+" : "{$min}–{$max}";
-            $count = $scores->filter(fn($s) => $s >= $min && $s < $max)->count();
-            if ($i === $bucketCount - 1) {
-                $count += $scores->filter(fn($s) => $s >= $max)->count();
-            }
+        $colors = [];
+
+        foreach ($statusCounts as $status => $count) {
+            $labels[] = $labelsMap[$status] ?? ucfirst($status);
             $data[] = $count;
+            $colors[] = $colorsMap[$status] ?? '#171717';
         }
 
         return [
-            'chart' => ['type' => 'bar'],
-            'series' => [[
-                'name' => 'Pendaftar',
-                'data' => $data,
-            ]],
-            'xaxis' => ['categories' => $labels],
-            'colors' => ['#171717'],
+            'chart' => ['type' => 'donut'],
+            'series' => $data,
+            'labels' => $labels,
+            'colors' => $colors,
             'plotOptions' => [
-                'bar' => ['borderRadius' => 4, 'columnWidth' => '70%']
-            ]
-        ];
-    }
-
-    private function buildGeoDistribution($applicationQuery): array
-    {
-        $userIds = (clone $applicationQuery)->where('status', '!=', 'draft')->pluck('user_id');
-        if ($userIds->isEmpty()) return [];
-
-        $rawDistribution = User::whereIn('id', $userIds)
-            ->whereNotNull('district')
-            ->selectRaw('district, count(*) as count')
-            ->groupBy('district')
-            ->orderByDesc('count')
-            ->limit(10)
-            ->get();
-
-        if ($rawDistribution->isEmpty()) return [];
-
-        return [
-            'chart' => ['type' => 'bar'],
-            'series' => [[
-                'name' => 'Pendaftar',
-                'data' => $rawDistribution->pluck('count')->toArray(),
-            ]],
-            'xaxis' => ['categories' => $rawDistribution->pluck('district')->toArray()],
-            'colors' => ['#0070f3'],
-            'plotOptions' => [
-                'bar' => ['borderRadius' => 4, 'horizontal' => true]
-            ]
+                'pie' => [
+                    'donut' => ['size' => '70%'],
+                    'expandOnClick' => false
+                ]
+            ],
+            'stroke' => ['width' => 0],
+            'legend' => ['show' => false],
+            'dataLabels' => ['enabled' => false],
         ];
     }
 

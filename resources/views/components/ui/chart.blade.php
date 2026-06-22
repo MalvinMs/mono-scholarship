@@ -11,6 +11,7 @@ $chartId = $id ?? 'chrt_' . uniqid();
 <div style="height: {{ $height }}; position: relative; width: 100%; min-width: 0;"
      x-data="apexchart"
      x-init="renderChart('{{ $chartId }}', {{ Js::from($options) }}, '{{ $height }}')"
-     wire:ignore>
+     wire:ignore
+     {{ $attributes }}>
     <div id="{{ $chartId }}"></div>
 </div>
