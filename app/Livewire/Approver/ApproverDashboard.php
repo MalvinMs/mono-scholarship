@@ -52,23 +52,28 @@ class ApproverDashboard extends Component
             ->orderBy('year')
             ->get();
 
-        if ($trends->isEmpty()) return ['labels' => [], 'datasets' => []];
+        if ($trends->isEmpty()) return [];
 
         return [
-            'labels' => $trends->pluck('year')->toArray(),
-            'datasets' => [[
-                'label' => 'Pendaftar',
+            'chart' => ['type' => 'area'],
+            'series' => [[
+                'name' => 'Pendaftar',
                 'data' => $trends->pluck('count')->toArray(),
-                'borderColor' => '#171717',
-                'backgroundColor' => 'rgba(23,23,23,0.06)',
-                'fill' => true,
-                'tension' => 0.3,
-                'pointBackgroundColor' => '#171717',
-                'pointBorderColor' => '#ffffff',
-                'pointBorderWidth' => 2,
-                'pointRadius' => 4,
-                'pointHoverRadius' => 6,
             ]],
+            'xaxis' => [
+                'categories' => $trends->pluck('year')->toArray()
+            ],
+            'colors' => ['#171717'],
+            'stroke' => ['curve' => 'smooth', 'width' => 2],
+            'fill' => [
+                'type' => 'gradient',
+                'gradient' => [
+                    'shadeIntensity' => 1,
+                    'opacityFrom' => 0.1,
+                    'opacityTo' => 0,
+                    'stops' => [0, 100]
+                ]
+            ]
         ];
     }
 }

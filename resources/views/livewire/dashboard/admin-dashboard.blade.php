@@ -174,17 +174,8 @@
                     <x-lucide-bar-chart-3 class="size-4 text-mute" />
                 </div>
             </div>
-            @if(!empty($scoreDistribution['labels']))
-                <x-ui.chart type="bar"
-                    :labels="$scoreDistribution['labels']"
-                    :datasets="$scoreDistribution['datasets']"
-                    :options="[
-                        'scales' => [
-                            'x' => ['grid' => ['display' => false]],
-                            'y' => ['beginAtZero' => true, 'grid' => ['color' => '#ebebeb']],
-                        ],
-                    ]"
-                    height="220px" />
+            @if(!empty($scoreDistribution))
+                <x-ui.chart :options="$scoreDistribution" height="220px" />
             @else
                 <div class="py-6">
                     <x-ui.empty-state icon="bar-chart-3" title="Belum ada data" description="Belum ada pendaftar dengan skor final." />
@@ -203,18 +194,8 @@
                     <x-lucide-map-pin class="size-4 text-mute" />
                 </div>
             </div>
-            @if(!empty($geoDistribution['labels']))
-                <x-ui.chart type="bar"
-                    :labels="$geoDistribution['labels']"
-                    :datasets="$geoDistribution['datasets']"
-                    :options="[
-                        'indexAxis' => 'y',
-                        'scales' => [
-                            'x' => ['beginAtZero' => true, 'grid' => ['color' => '#ebebeb']],
-                            'y' => ['grid' => ['display' => false]],
-                        ],
-                    ]"
-                    height="300px" />
+            @if(!empty($geoDistribution))
+                <x-ui.chart :options="$geoDistribution" height="300px" />
             @else
                 <div class="py-6">
                     <x-ui.empty-state icon="map" title="Belum ada data" description="Belum ada data wilayah pendaftar." />
@@ -234,18 +215,8 @@
                 <x-lucide-activity class="size-4 text-mute" />
             </div>
         </div>
-        @if(!empty($dailySubmissions['labels']))
-            <x-ui.chart type="line"
-                :labels="$dailySubmissions['labels']"
-                :datasets="$dailySubmissions['datasets']"
-                :options="[
-                    'interaction' => ['mode' => 'index', 'intersect' => false],
-                    'scales' => [
-                        'x' => ['grid' => ['display' => false]],
-                        'y' => ['beginAtZero' => true, 'grid' => ['color' => '#ebebeb'], 'ticks' => ['precision' => 0]],
-                    ],
-                ]"
-                height="240px" />
+        @if(!empty($dailySubmissions))
+            <x-ui.chart :options="$dailySubmissions" height="240px" />
         @else
             <div class="py-8">
                 <x-ui.empty-state icon="activity" title="Belum ada data" description="Belum ada pendaftar yang submit. Data akan muncul setelah pendaftar pertama melakukan submit." />

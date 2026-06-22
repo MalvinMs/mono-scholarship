@@ -77,7 +77,7 @@
     @endif
 
     {{-- Yearly Trend --}}
-    @if(!empty($yearlyTrend['labels']))
+    @if(!empty($yearlyTrend))
         <x-ui.card class="mb-8 animate-scale-in">
             <div class="flex items-center justify-between mb-4 pb-4 border-b border-hairline">
                 <div>
@@ -88,16 +88,7 @@
                     <x-lucide-trending-up class="size-4 text-mute" />
                 </div>
             </div>
-            <x-ui.chart type="line"
-                :labels="$yearlyTrend['labels']"
-                :datasets="$yearlyTrend['datasets']"
-                :options="[
-                    'scales' => [
-                        'x' => ['grid' => ['display' => false]],
-                        'y' => ['beginAtZero' => true, 'grid' => ['color' => '#ebebeb'], 'ticks' => ['precision' => 0]],
-                    ],
-                ]"
-                height="220px" />
+            <x-ui.chart :options="$yearlyTrend" height="220px" />
         </x-ui.card>
     @endif
 

@@ -73,7 +73,7 @@ class AdminDashboard extends Component
     private function buildScoreDistribution($scoreQuery): array
     {
         $scores = (clone $scoreQuery)->where('is_final', true)->pluck('total_score');
-        if ($scores->isEmpty()) return ['labels' => [], 'datasets' => []];
+        if ($scores->isEmpty()) return [];
 
         $maxScore = $scores->max();
         $bucketCount = min(8, max(4, (int) ceil($maxScore / 10)));
@@ -93,21 +93,23 @@ class AdminDashboard extends Component
         }
 
         return [
-            'labels' => $labels,
-            'datasets' => [[
-                'label' => 'Pendaftar',
+            'chart' => ['type' => 'bar'],
+            'series' => [[
+                'name' => 'Pendaftar',
                 'data' => $data,
-                'backgroundColor' => '#171717',
-                'borderRadius' => 4,
-                'barPercentage' => 0.7,
             ]],
+            'xaxis' => ['categories' => $labels],
+            'colors' => ['#171717'],
+            'plotOptions' => [
+                'bar' => ['borderRadius' => 4, 'columnWidth' => '70%']
+            ]
         ];
     }
 
     private function buildGeoDistribution($applicationQuery): array
     {
         $userIds = (clone $applicationQuery)->where('status', '!=', 'draft')->pluck('user_id');
-        if ($userIds->isEmpty()) return ['labels' => [], 'datasets' => []];
+        if ($userIds->isEmpty()) return [];
 
         $rawDistribution = User::whereIn('id', $userIds)
             ->whereNotNull('district')
@@ -117,17 +119,19 @@ class AdminDashboard extends Component
             ->limit(10)
             ->get();
 
-        if ($rawDistribution->isEmpty()) return ['labels' => [], 'datasets' => []];
+        if ($rawDistribution->isEmpty()) return [];
 
         return [
-            'labels' => $rawDistribution->pluck('district')->toArray(),
-            'datasets' => [[
-                'label' => 'Pendaftar',
+            'chart' => ['type' => 'bar'],
+            'series' => [[
+                'name' => 'Pendaftar',
                 'data' => $rawDistribution->pluck('count')->toArray(),
-                'backgroundColor' => '#0070f3',
-                'borderRadius' => 4,
-                'barPercentage' => 0.6,
             ]],
+            'xaxis' => ['categories' => $rawDistribution->pluck('district')->toArray()],
+            'colors' => ['#0070f3'],
+            'plotOptions' => [
+                'bar' => ['borderRadius' => 4, 'horizontal' => true]
+            ]
         ];
     }
 
@@ -140,23 +144,28 @@ class AdminDashboard extends Component
             ->orderBy('date')
             ->get();
 
-        if ($daily->isEmpty()) return ['labels' => [], 'datasets' => []];
+        if ($daily->isEmpty()) return [];
 
         return [
-            'labels' => $daily->map(fn($r) => Carbon::parse($r->date)->translatedFormat('d M'))->toArray(),
-            'datasets' => [[
-                'label' => 'Submit per Hari',
+            'chart' => ['type' => 'area'],
+            'series' => [[
+                'name' => 'Submit per Hari',
                 'data' => $daily->pluck('count')->toArray(),
-                'borderColor' => '#171717',
-                'backgroundColor' => 'rgba(23,23,23,0.05)',
-                'fill' => true,
-                'tension' => 0.25,
-                'pointBackgroundColor' => '#171717',
-                'pointBorderColor' => '#ffffff',
-                'pointBorderWidth' => 2,
-                'pointRadius' => 3,
-                'pointHoverRadius' => 5,
             ]],
+            'xaxis' => [
+                'categories' => $daily->map(fn($r) => Carbon::parse($r->date)->translatedFormat('d M'))->toArray()
+            ],
+            'colors' => ['#171717'],
+            'stroke' => ['curve' => 'smooth', 'width' => 2],
+            'fill' => [
+                'type' => 'gradient',
+                'gradient' => [
+                    'shadeIntensity' => 1,
+                    'opacityFrom' => 0.1,
+                    'opacityTo' => 0,
+                    'stops' => [0, 100]
+                ]
+            ]
         ];
     }
 }
