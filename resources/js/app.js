@@ -13,6 +13,12 @@ document.addEventListener('alpine:init', () => {
             // Dynamic dark mode integration
             const isDark = document.documentElement.classList.contains('dark');
             
+            // Helper to map hardcoded #171717 (ink) to #ededed (light) in dark mode
+            const getDynamicColors = (dark) => {
+                const baseColors = chartConfig.colors || ['#171717'];
+                return baseColors.map(c => c === '#171717' && dark ? '#ededed' : c);
+            };
+
             const defaultOptions = {
                 chart: {
                     height: chartHeight || '100%',
@@ -27,6 +33,7 @@ document.addEventListener('alpine:init', () => {
                         speed: 800,
                     }
                 },
+                colors: getDynamicColors(isDark),
                 theme: {
                     mode: isDark ? 'dark' : 'light'
                 },
@@ -51,6 +58,8 @@ document.addEventListener('alpine:init', () => {
             if (chartConfig.chart) {
                 finalOptions.chart = { ...defaultOptions.chart, ...chartConfig.chart };
             }
+            // Ensure dynamic colors override static config
+            finalOptions.colors = getDynamicColors(isDark);
 
             this.instance = new ApexCharts(container, finalOptions);
             this.instance.render();
@@ -62,6 +71,7 @@ document.addEventListener('alpine:init', () => {
                         const newIsDark = document.documentElement.classList.contains('dark');
                         this.instance.updateOptions({
                             theme: { mode: newIsDark ? 'dark' : 'light' },
+                            colors: getDynamicColors(newIsDark),
                             tooltip: { theme: newIsDark ? 'dark' : 'light' },
                             grid: { borderColor: newIsDark ? '#333333' : '#ebebeb' }
                         });

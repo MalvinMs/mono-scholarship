@@ -10,17 +10,23 @@
     <x-layouts.theme-script />
 </head>
 <body class="h-full bg-canvas-soft text-ink antialiased">
-    <div class="flex h-full" x-data="{ mobileOpen: false }">
+    <div class="flex h-full" x-data="{ mobileOpen: false, desktopCollapsed: localStorage.getItem('sidebarCollapsed') === 'true' }" x-init="$watch('desktopCollapsed', val => localStorage.setItem('sidebarCollapsed', val))">
         {{-- Mobile drawer --}}
         <x-ui.drawer side="left" x-model="mobileOpen" title="Navigasi">
             <x-layouts.sidebar :mobile="true" />
         </x-ui.drawer>
 
         {{-- Desktop sidebar --}}
-        <aside class="hidden lg:flex lg:shrink-0">
-            <div class="flex w-[var(--sidebar-width)] flex-col border-r border-hairline bg-canvas">
+        <aside class="hidden lg:flex lg:shrink-0 transition-all duration-300 ease-in-out relative z-20 group/sidebar" :class="desktopCollapsed ? 'w-[72px]' : 'w-[260px]'">
+            <div class="flex w-full h-full flex-col border-r border-hairline bg-canvas overflow-hidden">
                 <x-layouts.sidebar />
             </div>
+            {{-- Floating Toggle Button --}}
+            <button type="button" @click="desktopCollapsed = !desktopCollapsed" 
+                    class="absolute -right-3.5 top-5 z-50 flex size-7 items-center justify-center rounded-full border border-hairline bg-canvas text-mute hover:text-ink shadow-sm transition-all duration-300 opacity-0 group-hover/sidebar:opacity-100 focus:opacity-100" 
+                    :class="desktopCollapsed ? 'rotate-180 opacity-100' : ''" title="Toggle Sidebar">
+                <x-lucide-chevron-left class="size-4" />
+            </button>
         </aside>
 
         {{-- Main content area --}}

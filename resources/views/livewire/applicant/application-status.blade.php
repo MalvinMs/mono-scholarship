@@ -16,7 +16,17 @@
                     </x-ui.badge>
                 </div>
                 <div class="flex items-center gap-4 text-body-sm text-mute mt-2">
-                    <span class="flex items-center gap-1"><x-lucide-file-text class="size-4" /> {{ $application->registration_number }}</span>
+                    <div class="flex items-center gap-1.5" x-data="{ copied: false }">
+                        <x-lucide-file-text class="size-4" /> 
+                        <span class="font-mono text-ink tracking-tight bg-canvas-soft px-1.5 py-0.5 rounded border border-hairline">{{ $application->registration_number }}</span>
+                        <button type="button" 
+                                @click="navigator.clipboard.writeText('{{ $application->registration_number }}'); copied = true; setTimeout(() => copied = false, 2000)" 
+                                class="p-1 rounded hover:bg-canvas-soft transition-colors text-mute hover:text-ink focus:outline-none" 
+                                title="Salin Nomor Registrasi">
+                            <x-lucide-copy x-show="!copied" class="size-3.5" />
+                            <x-lucide-check x-show="copied" class="size-3.5 text-success" style="display: none;" />
+                        </button>
+                    </div>
                     <span class="flex items-center gap-1"><x-lucide-calendar class="size-4" /> Diajukan: {{ $application->created_at ? $application->created_at->format('d M Y') : 'N/A' }}</span>
                 </div>
             </div>
