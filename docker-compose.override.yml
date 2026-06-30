@@ -1,0 +1,156 @@
+# ============================================================
+# Platform Beasiswa — Docker Compose Override (Development)
+# ============================================================
+# Auto-merged by `docker compose up -d`
+# Adds Postgres + Mailpit + App (FrankenPHP Octane dev mode)
+# ============================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: beasiswa-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-mono_scholarship}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: beasiswa-mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+    environment:
+      MP_MAX_MESSAGES: 5000
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/dev.Dockerfile
+    container_name: beasiswa-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:80"
+    volumes:
+      - .:/app:delegated
+      - ./docker/frankenphp/Caddyfile:/etc/caddy/Caddyfile:ro
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: "http://localhost:${APP_PORT:-8000}"
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-mono_scholarship}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_CLIENT: predis
+      REDIS_DB: 0
+      REDIS_CACHE_DB: 1
+      REDIS_QUEUE_DB: 2
+      REDIS_SESSION_DB: 3
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      FILESYSTEM_DISK: minio
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: development-files
+      MINIO_USE_PATH_STYLE: "true"
+      AWS_DEFAULT_REGION: us-east-1
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: noreply@beasiswa.test
+      MAIL_FROM_NAME: "Platform Beasiswa"
+      FRONTEND_URL: http://localhost:5173
+      OCTANE_SERVER: frankenphp
+      OCTANE_WORKERS: "1"
+      OCTANE_MAX_REQUESTS: "200"
+      OCTANE_HTTPS: "false"
+      LOG_LEVEL: debug
+      SESSION_LIFETIME: 30
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  queue-worker:
+    build:
+      context: .
+      dockerfile: docker/php/dev.Dockerfile
+    container_name: beasiswa-queue
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "redis", "--sleep=3", "--tries=3", "--max-time=3600", "--queue=default,scoring,notifications"]
+    volumes:
+      - .:/app:delegated
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_DATABASE: ${DB_DATABASE:-mono_scholarship}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      REDIS_HOST: redis
+      REDIS_QUEUE_DB: 2
+      QUEUE_CONNECTION: redis
+      FILESYSTEM_DISK: minio
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: development-files
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/dev.Dockerfile
+    container_name: beasiswa-scheduler
+    restart: unless-stopped
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - .:/app:delegated
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_DATABASE: ${DB_DATABASE:-mono_scholarship}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      REDIS_HOST: redis
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

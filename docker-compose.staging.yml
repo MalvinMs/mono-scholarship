@@ -1,0 +1,159 @@
+# ============================================================
+# Platform Beasiswa — Docker Compose (Staging)
+# ============================================================
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d
+# ============================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: beasiswa-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-mono_scholarship_staging}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: beasiswa-mailpit
+    restart: unless-stopped
+    expose:
+      - "1025"
+    environment:
+      MP_MAX_MESSAGES: 5000
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/prod.Dockerfile
+    container_name: beasiswa-app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_ENV: staging
+      APP_DEBUG: "false"
+      APP_URL: "https://staging.beasiswa.domain.com"
+      APP_KEY: ${APP_KEY}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-mono_scholarship_staging}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      REDIS_CACHE_DB: 1
+      REDIS_QUEUE_DB: 2
+      REDIS_SESSION_DB: 3
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      FILESYSTEM_DISK: minio
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: staging-files
+      MINIO_USE_PATH_STYLE: "true"
+      AWS_DEFAULT_REGION: us-east-1
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: noreply@staging.beasiswa.domain.com
+      MAIL_FROM_NAME: "Platform Beasiswa"
+      FRONTEND_URL: "https://staging.beasiswa.domain.com"
+      OCTANE_SERVER: frankenphp
+      OCTANE_WORKERS: ${OCTANE_WORKERS:-4}
+      OCTANE_MAX_REQUESTS: ${OCTANE_MAX_REQUESTS:-500}
+      OCTANE_HTTPS: "true"
+      LOG_CHANNEL: stack
+      LOG_STACK: daily
+      LOG_LEVEL: debug
+      SESSION_LIFETIME: 120
+      SESSION_ENCRYPT: "true"
+      CACHE_PREFIX: "beasiswa-staging-cache-"
+      FONNTE_TOKEN: ${FONNTE_TOKEN:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - app_storage:/app/storage
+    networks:
+      - app-network
+
+  queue-worker:
+    build:
+      context: .
+      dockerfile: docker/php/prod.Dockerfile
+    container_name: beasiswa-queue
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "redis", "--sleep=3", "--tries=3", "--max-time=3600", "--queue=default,scoring,notifications"]
+    environment:
+      APP_ENV: staging
+      APP_KEY: ${APP_KEY}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_DATABASE: ${DB_DATABASE:-mono_scholarship_staging}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      REDIS_HOST: redis
+      REDIS_QUEUE_DB: 2
+      QUEUE_CONNECTION: redis
+      FILESYSTEM_DISK: minio
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: staging-files
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+    deploy:
+      replicas: ${QUEUE_WORKERS:-2}
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/prod.Dockerfile
+    container_name: beasiswa-scheduler
+    restart: unless-stopped
+    command: ["php", "artisan", "schedule:work"]
+    environment:
+      APP_ENV: staging
+      APP_KEY: ${APP_KEY}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_DATABASE: ${DB_DATABASE:-mono_scholarship_staging}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      REDIS_HOST: redis
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+  app_storage:
+
+networks:
+  app-network:
+    driver: bridge

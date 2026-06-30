@@ -5,7 +5,7 @@ namespace App\Http\Responses;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
 
-class LoginResponse implements LoginResponseContract
+final class LoginResponse implements LoginResponseContract
 {
     public function toResponse($request)
     {
